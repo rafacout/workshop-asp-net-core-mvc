@@ -1,9 +1,9 @@
-﻿using SalesWebMVC.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using SalesWebMVC.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 
 namespace SalesWebMVC.Services
 {
@@ -18,7 +18,7 @@ namespace SalesWebMVC.Services
 
         public async Task<List<SalesRecord>> FindByDateAsync(DateTime? minDate, DateTime? maxDate)
         {
-            var result = from obj 
+            var result = from obj
                          in _context.SalesRecord
                          select obj;
 
@@ -35,6 +35,30 @@ namespace SalesWebMVC.Services
             return await result.Include(a => a.Seller)
                 .Include(b => b.Seller.Department)
                 .OrderByDescending(c => c.Date)
+                .ToListAsync();
+        }
+
+        public async Task<List<IGrouping<Department, SalesRecord>>> FindByDateGroupingAsync(DateTime? minDate, DateTime? maxDate)
+        {
+
+            var result = from obj
+                         in _context.SalesRecord
+                         select obj;
+
+            if (minDate.HasValue)
+            {
+                result = result.Where(a => a.Date >= minDate.Value);
+            }
+
+            if (maxDate.HasValue)
+            {
+                result = result.Where(a => a.Date <= maxDate.Value);
+            }
+
+            return await result.Include(a => a.Seller)
+                .Include(b => b.Seller.Department)
+                .OrderByDescending(c => c.Date)
+                .GroupBy(x => x.Seller.Department)
                 .ToListAsync();
         }
     }
